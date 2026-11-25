@@ -3,6 +3,7 @@
 
 Variante a = Foto (Unsplash) mit weißer Schrift
 Variante b = Typografie auf Cremegrund mit Spirale
+Variante c = Brief-Optik: Handschrift (Caveat) auf warmem Briefpapier
 
 Beispiele:
   python3 render.py --variant a --photo "https://images.unsplash.com/...&w=1400" \
@@ -31,6 +32,20 @@ CREAM = (245, 241, 234)
 INK = (44, 44, 44)
 SAGE = (76, 101, 84)
 WHITE = (255, 255, 255)
+
+
+PAPER = (246, 238, 224)
+INK_BLUE = (38, 44, 74)
+SEPIA = (120, 98, 72)
+
+
+def hand(size, weight=500):
+    f = ImageFont.truetype(os.path.join(HERE, "fonts", "Caveat[wght].ttf"), size)
+    try:
+        f.set_variation_by_axes([weight])
+    except Exception:
+        pass
+    return f
 
 
 def font(size, italic=False, weight=400):
@@ -71,10 +86,11 @@ def wrap(draw, text, f):
     return lines
 
 
-def layout(draw, text, start=66, minimum=46, max_lines=9):
+def layout(draw, text, start=66, minimum=46, max_lines=9, face=None):
+    face = face or font
     size = start
     while True:
-        f = font(size)
+        f = face(size)
         lines = wrap(draw, text, f)
         forced = [p.strip() for p in text.split("|") if p.strip()] if "|" in text else None
         no_split = forced is None or len(lines) == len(forced)
@@ -163,9 +179,50 @@ def render_b(text):
     return base
 
 
+def paper():
+    import random
+    rnd = random.Random(7)
+    base = Image.new("RGB", (W, H), PAPER)
+    noise = Image.effect_noise((W, H), 14).convert("L")
+    tint = Image.merge("RGB", [noise.point(lambda v: v * 0.06 + 236)] * 3)
+    base = Image.blend(base, tint, 0.18)
+    # sanfte Vignette, wie altes Papier
+    vig = Image.new("L", (W, H), 0)
+    vd = ImageDraw.Draw(vig)
+    for i in range(60):
+        vd.rectangle([i * 3, i * 3, W - i * 3, H - i * 3], outline=int(60 - i))
+    vig = vig.filter(ImageFilter.GaussianBlur(30))
+    shade = Image.new("RGB", (W, H), (205, 188, 160))
+    base = Image.composite(shade, base, vig.point(lambda v: v // 2))
+    base = base.convert("RGBA")
+    return base
+
+
+def render_c(text):
+    global MAX_W
+    base = paper()
+    d = ImageDraw.Draw(base)
+    old = MAX_W
+    MAX_W = W - 250
+    f, size, lines = layout(d, text, start=90, minimum=48, max_lines=10, face=hand)
+    MAX_W = old
+    lh = int(size * 1.28)
+    n = len(lines)
+    first = int(H * GOLD + 40 - (n - 1) * lh / 2)
+    first = max(first, 230)
+    # feine Linien nur unter den Zeilen, eine Linie Luft darüber und darunter
+    for i in range(-1, n + 1):
+        y = first + i * lh + int(size * 0.18)
+        d.line([(110, y), (W - 110, y)], fill=(150, 128, 100, 70), width=2)
+    for i, l in enumerate(lines):
+        d.text((125, first + i * lh), l, font=f, fill=INK_BLUE, anchor="ls")
+    footer(base, SEPIA, (120, 98, 72, 120), INK)
+    return base
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--variant", choices=["a", "b"], required=True)
+    ap.add_argument("--variant", choices=["a", "b", "c"], required=True)
     ap.add_argument("--text", required=True)
     ap.add_argument("--photo", help="Unsplash-URL (nur Variante a)")
     ap.add_argument("--out", required=True)
@@ -174,6 +231,8 @@ def main():
         if not a.photo:
             raise SystemExit("Variante a braucht --photo")
         img = render_a(a.text, a.photo)
+    elif a.variant == "c":
+        img = render_c(a.text)
     else:
         img = render_b(a.text)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)

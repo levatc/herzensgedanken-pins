@@ -5,8 +5,8 @@ Erzeugt von der Herzensgedanken-Crew (Claude), veröffentlicht über Buffer.
 
 ## Aufbau
 
-- `render.py` – baut einen Pin (1000 × 1500 px). Variante `a` = Unsplash-Foto mit weißer Schrift, Variante `b` = Typografie auf Cremegrund mit Spirale.
-- `fonts/` – Cormorant Garamond (SIL Open Font License, siehe `fonts/OFL.txt`)
+- `render.py` – baut einen Pin (1000 × 1500 px). Variante `a` = Unsplash-Foto mit weißer Schrift, Variante `b` = Typografie auf Cremegrund mit Spirale. Variante `c` = Brief-Optik: Handschrift (Caveat) auf warmem Briefpapier (von Johannes freigegeben am 25.11.2026, Einsatz als Experiment E8 nach E1). Zeilenumbrüche bei `c` immer mit `|` setzen.
+- `fonts/` – Cormorant Garamond (SIL Open Font License, siehe `fonts/OFL.txt`) und Caveat (SIL OFL, siehe `fonts/OFL-Caveat.txt`)
 - `assets/spirale.png` – Johannes' Spirale
 - `pins/` – fertige Pins, Dateiname `JJJJ-MM-TT-<Zitat-ID>-<a|b>.jpg`
 
